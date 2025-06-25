@@ -1,9 +1,7 @@
 name: Downloading Dependencies
 on:
   workflow_call:
-  push:
-    branches: 
-      - 'feature*'
+ 
 
 jobs:
   build:
