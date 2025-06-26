@@ -45,7 +45,7 @@ jobs:
           maven-version: "3.9.1"
 
       - name: Setup AWS CLI v2
-        uses: aws-actions/setup-aws-cli@v2
+        uses: aws-actions/setup-aws-cli@v3
         with:
           aws-region: ${{ env.AWS_REGION }}
 
