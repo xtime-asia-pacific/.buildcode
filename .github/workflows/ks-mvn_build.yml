@@ -1,0 +1,69 @@
+name: 'mvn-build'
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        required: true
+        type: string
+      mvn-build-phases-args:
+        required: true
+        type: string
+      check-pom-version:
+        required: false
+        type: boolean
+        default: false
+
+env:
+  AWS_REGION: "us-west-2"        # ✅ Adjust AWS region as needed
+
+jobs:
+  build:
+    runs-on: CodeBuild            # ✅ Change to your actual runner label (like ubuntu-latest if testing)
+
+    steps:
+      - name: Checkout calling workflow repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.repository.full_name }}
+          ref: ${{ github.event.ref_name }}
+          submodules: true
+          token: ${{ secrets.GHE_PAT }}
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ inputs.java-version }}
+          distribution: 'corretto'
+          cache: 'maven'
+          overwrite-settings: 'false'
+
+      - name: Setup Maven
+        uses: s4u/setup-maven-action@v1.12.0
+        with:
+          maven-version: "3.9.1"
+
+      - name: Setup AWS CLI v2
+        uses: aws-actions/setup-aws-cli@v2
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create Maven settings.xml
+        run: |
+          mkdir -p ~/.m2
+          echo "${{ vars.MAVEN_SETTINGS }}" > ~/.m2/settings.xml
+
+      - name: Check POM version against branch
+        if: inputs.check-pom-version
+        run: |
+          version=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
+          IFS='-' read -ra branch_splits <<< ${GITHUB_REF_NAME}
+          if ! [[ ${branch_splits[@]/%/-SNAPSHOT} =~ $version ]]; then
+            echo "::error::POM version $version doesn't match branch ${GITHUB_REF_NAME}"
+            exit 1
+          fi
+
+      - name: Run Maven Build
+        run: |
+          mvn ${{ inputs.mvn-build-phases-args }}
