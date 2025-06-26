@@ -15,11 +15,11 @@ on:
         default: false
 
 env:
-  AWS_REGION: "us-west-2"        # ✅ Adjust AWS region as needed
+  AWS_REGION: "ap-southeast-2"        
 
 jobs:
   build:
-    runs-on: CodeBuild            # ✅ Change to your actual runner label (like ubuntu-latest if testing)
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout calling workflow repository
